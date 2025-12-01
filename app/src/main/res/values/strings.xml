@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">InternetRadio</string>
+    <string name="nav_header_title">Internet Radio</string>
+    <string name="nav_header_desc">Desc</string>
+    <string name="nav_header_subtitle">Subtitle</string>
+
+</resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_radio_player"
+            android:icon="@drawable/ic_menu_play"
+            android:title="Odtwarzacz Radio" />
+        <item
+            android:id="@+id/nav_station_list"
+            android:icon="@drawable/ic_menu_list"
+            android:title="Lista Stacji" />
+    </group>
+
+    <item android:title="Informacje">
+        <menu>
+            <item
+                android:id="@+id/nav_settings"
+                android:icon="@drawable/ic_menu_settings"
+                android:title="Ustawienia" />
+        </menu>
+    </item>
+</menu>
