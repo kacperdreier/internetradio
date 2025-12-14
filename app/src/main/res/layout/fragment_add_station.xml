@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nazwa Stacji:"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp"/>
+
+    <EditText
+        android:id="@+id/edit_station_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="np. Moje Lokalne Radio"
+        android:inputType="textCapWords"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="URL Strumienia (M3U/PLS/MP3):"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp"/>
+
+    <EditText
+        android:id="@+id/edit_station_url"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="np. http://mojeradio.pl/stream.mp3"
+        android:inputType="textUri"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Kraj (opcjonalnie):"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp"/>
+
+    <EditText
+        android:id="@+id/edit_station_country"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="np. Polska"
+        android:inputType="textCapWords"
+        android:layout_marginBottom="24dp"/>
+
+    <Button
+        android:id="@+id/button_save_station"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Zapisz Stację" />
+
+</LinearLayout>

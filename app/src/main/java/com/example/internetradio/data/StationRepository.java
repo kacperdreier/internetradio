@@ -1,6 +1,7 @@
 package com.example.internetradio.data;
 
 import android.app.Application;
+import android.util.Log;
 import androidx.lifecycle.LiveData;
 import com.example.internetradio.api.RadioBrowserApi;
 import com.example.internetradio.api.RetrofitClient;
@@ -51,6 +52,46 @@ public class StationRepository {
             public void onFailure(Call<List<RadioStation>> call, Throwable t) {
                 System.out.println("Błąd sieci: " + t.getMessage());
             }
+        });
+    }
+    public LiveData<RadioStation> getStationByUuid(String uuid) {
+        return stationDao.getStationByUuid(uuid);
+    }
+
+    public void delete(RadioStation station) {
+        databaseWriteExecutor.execute(() -> {
+            stationDao.delete(station);
+        });
+    }
+
+    public void update(RadioStation station) {
+        databaseWriteExecutor.execute(() -> {
+            stationDao.update(station);
+        });
+    }
+    public void insert(RadioStation station) {
+        databaseWriteExecutor.execute(() -> {
+            stationDao.insert(station);
+        });
+    }
+    public void checkAndFetchStations() {
+        databaseWriteExecutor.execute(() -> {
+            int count = stationDao.getStationCount();
+
+            if (count == 0) {
+                Log.d("Repository", "Baza jest pusta. Rozpoczynam pobieranie danych z API.");
+                fetchStationsAndSave();
+            } else {
+                Log.d("Repository", "Baza zawiera " + count + " stacji. Pomijam pobieranie API.");
+            }
+        });
+    }
+    public LiveData<List<RadioStation>> getFavoriteStations() {
+        return stationDao.getFavoriteStations();
+    }
+    public void updateFavoriteStatus(RadioStation station) {
+        databaseWriteExecutor.execute(() -> {
+            stationDao.update(station);
         });
     }
 }

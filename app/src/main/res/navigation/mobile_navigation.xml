@@ -15,6 +15,39 @@
         android:id="@id/nav_station_list"
         android:name="com.example.internetradio.fragments.StationListFragment"
         android:label="Lista Stacji"
-        tools:layout="@layout/fragment_station_list" />
+        tools:layout="@layout/fragment_station_list">
+        <action
+            android:id="@+id/action_nav_station_list_to_stationDetailsFragment"
+            app:destination="@id/stationDetailsFragment" />
+        <action
+            android:id="@+id/action_nav_station_list_to_addStationFragment"
+            app:destination="@id/addStationFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_favorites"
+        android:name="com.example.internetradio.fragments.FavoriteListFragment"
+        android:label="Ulubione"
+        tools:layout="@layout/fragment_favorite_list">
+        <action
+            android:id="@+id/action_nav_favorites_to_stationDetailsFragment"
+            app:destination="@id/stationDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/stationDetailsFragment"
+        android:name="com.example.internetradio.fragments.StationDetailsFragment"
+        android:label="Szczegóły Stacji"
+        tools:layout="@layout/fragment_station_details">
+        <argument
+            android:name="stationUuid"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addStationFragment"
+        android:name="com.example.internetradio.fragments.AddStationFragment"
+        android:label="Dodaj Nową Stację"
+        tools:layout="@layout/fragment_add_station" />
 
 </navigation>

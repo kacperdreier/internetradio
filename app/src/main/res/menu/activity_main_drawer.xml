@@ -12,6 +12,10 @@
             android:id="@+id/nav_station_list"
             android:icon="@drawable/ic_menu_list"
             android:title="Lista Stacji" />
+        <item
+            android:id="@+id/nav_favorites"
+            android:icon="@drawable/ic_menu_favorite"
+            android:title="Ulubione" />
     </group>
 
     <item android:title="Informacje">

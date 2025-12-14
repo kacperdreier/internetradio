@@ -13,7 +13,15 @@ import java.util.List;
 public class StationListAdapter extends RecyclerView.Adapter<StationListAdapter.StationViewHolder> {
 
     private List<RadioStation> stations;
+    public interface OnStationClickListener {
+        void onStationClick(String stationUuid);
+    }
 
+    private OnStationClickListener clickListener;
+
+    public void setOnStationClickListener(OnStationClickListener listener) {
+        this.clickListener = listener;
+    }
     public void setStations(List<RadioStation> stations) {
         this.stations = stations;
         notifyDataSetChanged();
@@ -30,9 +38,16 @@ public class StationListAdapter extends RecyclerView.Adapter<StationListAdapter.
     @Override
     public void onBindViewHolder(@NonNull StationViewHolder holder, int position) {
         if (stations != null) {
-            RadioStation currentStation = stations.get(position);
+            // Dodaj 'final'
+            final RadioStation currentStation = stations.get(position);
             holder.stationNameTextView.setText(currentStation.getName());
             holder.stationCountryTextView.setText(currentStation.getCountry());
+
+            holder.itemView.setOnClickListener(v -> {
+                if (clickListener != null) {
+                    clickListener.onStationClick(currentStation.getStationUuid());
+                }
+            });
         }
     }
 

@@ -5,10 +5,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.internetradio.fragments.StationListFragment">
+    tools:context="com.example.internetradio.fragments.FavoriteListFragment">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/station_list_recycler_view"
+        android:id="@+id/favorite_list_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -17,15 +17,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:listitem="@layout/item_radio_station"/>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add_station"
+    <TextView
+        android:id="@+id/text_empty_favorites"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:clickable="true"
-        android:focusable="true"
-        app:srcCompat="@android:drawable/ic_input_add"
+        android:text="Nie masz jeszcze żadnych ulubionych stacji."
+        android:visibility="gone"
+        android:textSize="16sp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

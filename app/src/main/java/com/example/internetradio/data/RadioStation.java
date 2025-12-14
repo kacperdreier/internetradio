@@ -1,10 +1,13 @@
-package com.example.internetradio.data; // Utwórz nowy pakiet 'data'
+package com.example.internetradio.data;
 
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 import com.google.gson.annotations.SerializedName;
 
-@Entity(tableName = "stations")
+@Entity(tableName = "stations",
+        indices = {@Index(value = {"stationUuid"}, unique = true)})
 public class RadioStation {
 
     @PrimaryKey(autoGenerate = true)
@@ -22,11 +25,15 @@ public class RadioStation {
     @SerializedName("country")
     private String country;
 
-    public RadioStation(String stationUuid, String name, String url, String country) {
+    @ColumnInfo(name = "is_favorite")
+    private boolean isFavorite = false;
+
+    public RadioStation(String stationUuid, String name, String url, String country, boolean isFavorite) {
         this.stationUuid = stationUuid;
         this.name = name;
         this.url = url;
         this.country = country;
+        this.isFavorite = isFavorite;
     }
 
     public int getId() { return id; }
@@ -43,4 +50,12 @@ public class RadioStation {
 
     public String getCountry() { return country; }
     public void setCountry(String country) { this.country = country; }
+
+    public boolean isFavorite() {
+        return isFavorite;
+    }
+
+    public void setFavorite(boolean favorite) {
+        isFavorite = favorite;
+    }
 }
