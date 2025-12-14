@@ -13,7 +13,7 @@
 
     <fragment
         android:id="@id/nav_station_list"
-        android:name="com.example.internetradio.StationListFragment"
+        android:name="com.example.internetradio.fragments.StationListFragment"
         android:label="Lista Stacji"
         tools:layout="@layout/fragment_station_list" />
 
