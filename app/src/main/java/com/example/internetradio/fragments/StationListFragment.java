@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.internetradio.R;
 import com.example.internetradio.adapters.StationListAdapter;
+import com.example.internetradio.data.RadioStation;
 import com.example.internetradio.viewmodel.StationViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.navigation.Navigation;
@@ -46,9 +47,18 @@ public class StationListFragment extends Fragment implements StationListAdapter.
         return view;
     }
     @Override
-    public void onStationClick(String stationUuid) {
+    public void onStationClick(RadioStation station) {
+        com.example.internetradio.MainActivity mainActivity = (com.example.internetradio.MainActivity) getActivity();
+        if (mainActivity != null && mainActivity.getBleManager() != null) {
+
+            String command = "ADD " + station.getUrl() + " " + station.getName();
+            mainActivity.getBleManager().sendCommand(command);
+            mainActivity.getBleManager().sendCommand("PLAY 2");
+        }
+
+
         Bundle bundle = new Bundle();
-        bundle.putString("stationUuid", stationUuid);
+        bundle.putString("stationUuid", station.getStationUuid());
 
         Navigation.findNavController(requireView()).navigate(R.id.stationDetailsFragment, bundle);
     }

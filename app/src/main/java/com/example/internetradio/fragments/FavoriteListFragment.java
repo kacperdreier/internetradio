@@ -12,8 +12,11 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.internetradio.MainActivity;
 import com.example.internetradio.R;
 import com.example.internetradio.adapters.StationListAdapter;
+import com.example.internetradio.data.RadioStation; // Upewnij się, że masz ten import
 import com.example.internetradio.viewmodel.StationViewModel;
 
 public class FavoriteListFragment extends Fragment implements StationListAdapter.OnStationClickListener {
@@ -25,7 +28,7 @@ public class FavoriteListFragment extends Fragment implements StationListAdapter
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_favorite_list, container, false); // Użycie nowego layoutu
+        View view = inflater.inflate(R.layout.fragment_favorite_list, container, false);
 
         RecyclerView recyclerView = view.findViewById(R.id.favorite_list_recycler_view);
         emptyTextView = view.findViewById(R.id.text_empty_favorites);
@@ -53,9 +56,16 @@ public class FavoriteListFragment extends Fragment implements StationListAdapter
     }
 
     @Override
-    public void onStationClick(String stationUuid) {
+    public void onStationClick(RadioStation station) {
+        MainActivity mainActivity = (MainActivity) getActivity();
+        if (mainActivity != null && mainActivity.getBleManager() != null) {
+            String command = "ADD " + station.getUrl() + " " + station.getName();
+            mainActivity.getBleManager().sendCommand(command);
+            mainActivity.getBleManager().sendCommand("PLAY 2");
+        }
+
         Bundle bundle = new Bundle();
-        bundle.putString("stationUuid", stationUuid);
+        bundle.putString("stationUuid", station.getStationUuid());
         Navigation.findNavController(requireView()).navigate(R.id.stationDetailsFragment, bundle);
     }
 }

@@ -14,7 +14,7 @@ public class StationListAdapter extends RecyclerView.Adapter<StationListAdapter.
 
     private List<RadioStation> stations;
     public interface OnStationClickListener {
-        void onStationClick(String stationUuid);
+        void onStationClick(RadioStation station);
     }
 
     private OnStationClickListener clickListener;
@@ -38,14 +38,13 @@ public class StationListAdapter extends RecyclerView.Adapter<StationListAdapter.
     @Override
     public void onBindViewHolder(@NonNull StationViewHolder holder, int position) {
         if (stations != null) {
-            // Dodaj 'final'
             final RadioStation currentStation = stations.get(position);
             holder.stationNameTextView.setText(currentStation.getName());
             holder.stationCountryTextView.setText(currentStation.getCountry());
 
             holder.itemView.setOnClickListener(v -> {
                 if (clickListener != null) {
-                    clickListener.onStationClick(currentStation.getStationUuid());
+                    clickListener.onStationClick(currentStation);
                 }
             });
         }

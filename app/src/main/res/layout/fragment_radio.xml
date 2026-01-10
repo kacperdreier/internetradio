@@ -11,7 +11,7 @@
         android:id="@+id/station_logo"
         android:layout_width="150dp"
         android:layout_height="150dp"
-        android:layout_marginTop="64dp"
+        android:layout_marginTop="32dp"
         android:src="@drawable/ic_radio_default"
         android:contentDescription="Logo stacji"
         app:layout_constraintEnd_toEndOf="parent"
@@ -22,8 +22,8 @@
         android:id="@+id/station_name_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="Nazwa Stacji Radiowej"
+        android:layout_marginTop="24dp"
+        android:text="Radio Domyslne"
         android:textAlignment="center"
         android:textSize="24sp"
         android:textStyle="bold"
@@ -36,7 +36,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Wykonawca - Tytuł Utworu"
+        android:text="Czekam na sygnał..."
         android:textAlignment="center"
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -47,21 +47,17 @@
         android:id="@+id/control_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="32dp"
         android:gravity="center"
         android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/track_info_text">
 
         <ImageButton
             android:id="@+id/button_prev_station"
             android:layout_width="64dp"
             android:layout_height="64dp"
-            android:layout_marginEnd="16dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_skip_previous"
-            android:contentDescription="Poprzednia stacja" />
+            android:src="@drawable/ic_skip_previous" />
 
         <ImageButton
             android:id="@+id/button_play_pause"
@@ -69,18 +65,46 @@
             android:layout_height="88dp"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:src="@drawable/ic_play"
-            android:tint="@android:color/white"
-            android:contentDescription="Odtwarzaj/Pauzuj" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_play" />
 
         <ImageButton
             android:id="@+id/button_next_station"
             android:layout_width="64dp"
             android:layout_height="64dp"
-            android:layout_marginStart="16dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_skip_next"
-            android:contentDescription="Następna stacja" />
+            android:src="@drawable/ic_skip_next" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/volume_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/control_layout">
+
+        <Button
+            android:id="@+id/button_vol_minus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="VOL -" />
+
+        <Button
+            android:id="@+id/button_vol_15"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="VOL 15" />
+
+        <Button
+            android:id="@+id/button_vol_plus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VOL +" />
     </LinearLayout>
 
     <ProgressBar
@@ -88,11 +112,20 @@
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="24dp"
         android:max="100"
-        android:progress="0"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/control_layout" />
+        app:layout_constraintTop_toBottomOf="@+id/volume_layout" />
+
+    <Button
+        android:id="@+id/button_ble_connect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
+        android:text="POŁĄCZ Z RADIEM"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
