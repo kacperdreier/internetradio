@@ -55,8 +55,6 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
 
-        checkPermissions();
-
         bleManager = new BleManager(this, new BleManager.BleListener() {
             @Override
             public void onStatusUpdate(String message) {
@@ -65,24 +63,54 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onDataReceived(String data) {
-                runOnUiThread(() -> {
-                    updateRadioFragmentUI(data);
-                });
+                runOnUiThread(() -> updateRadioFragmentUI(data));
             }
         });
+
+        checkPermissions();
+
+        if (hasRequiredPermissions()) {
+            connectWithDelay();
+        }
+    }
+
+    private void connectWithDelay() {
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            if (bleManager != null) {
+                bleManager.connectToRadio();
+            }
+        }, 3000);
+    }
+
+    private boolean hasRequiredPermissions() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            return androidx.core.content.ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == android.content.pm.PackageManager.PERMISSION_GRANTED &&
+                    androidx.core.content.ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        }
+        return androidx.core.content.ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED;
     }
 
     private void checkPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            requestPermissionLauncher.launch(new String[]{
-                    Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-            });
+        String[] permissions;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            permissions = new String[]{
+                    android.Manifest.permission.BLUETOOTH_SCAN,
+                    android.Manifest.permission.BLUETOOTH_CONNECT,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+            };
         } else {
-            requestPermissionLauncher.launch(new String[]{
-                    Manifest.permission.ACCESS_FINE_LOCATION
-            });
+            permissions = new String[]{
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+            };
+        }
+
+        for (String permission : permissions) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, permission)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(this, permissions, 1);
+                break;
+            }
         }
     }
 

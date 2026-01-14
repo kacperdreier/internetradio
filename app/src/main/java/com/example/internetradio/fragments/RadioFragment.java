@@ -1,12 +1,14 @@
 package com.example.internetradio.fragments;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,10 +36,7 @@ public class RadioFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (getActivity() instanceof MainActivity) {
-            bleManager = ((MainActivity) getActivity()).getBleManager();
-        }
-        stationNameTextView=view.findViewById(R.id.station_name_text);
+        stationNameTextView = view.findViewById(R.id.station_name_text);
         playPauseButton = view.findViewById(R.id.button_play_pause);
         prevButton = view.findViewById(R.id.button_prev_station);
         nextButton = view.findViewById(R.id.button_next_station);
@@ -46,37 +45,43 @@ public class RadioFragment extends Fragment {
         vol15Button = view.findViewById(R.id.button_vol_15);
         connectButton = view.findViewById(R.id.button_ble_connect);
 
+        setupBleManager();
 
         connectButton.setOnClickListener(v -> {
             if (bleManager != null) bleManager.connectToRadio();
         });
 
-        nextButton.setOnClickListener(v -> {
-            if (bleManager != null) bleManager.sendCommand("NEXT");
-        });
+        nextButton.setOnClickListener(v -> sendBleCommand("NEXT"));
+        prevButton.setOnClickListener(v -> sendBleCommand("PREV"));
+        volUpButton.setOnClickListener(v -> sendBleCommand("VOL+"));
+        volDownButton.setOnClickListener(v -> sendBleCommand("VOL-"));
+        vol15Button.setOnClickListener(v -> sendBleCommand("SETVOL 15"));
+        playPauseButton.setOnClickListener(v -> sendBleCommand("PLAY 2"));
+    }
 
-        prevButton.setOnClickListener(v -> {
-            if (bleManager != null) bleManager.sendCommand("PREV");
-        });
+    @Override
+    public void onResume() {
+        super.onResume();
+        setupBleManager();
 
-        volUpButton.setOnClickListener(v -> {
-            if (bleManager != null) bleManager.sendCommand("VOL+");
-        });
+        View fragmentView = getView();
+        if (fragmentView != null) {
+            fragmentView.postDelayed(() -> sendBleCommand("LIST"), 1000);
+        }
+    }
 
-        volDownButton.setOnClickListener(v -> {
-            if (bleManager != null) bleManager.sendCommand("VOL-");
-        });
+    private void setupBleManager() {
+        if (getActivity() instanceof MainActivity) {
+            bleManager = ((MainActivity) getActivity()).getBleManager();
+        }
+    }
 
-        vol15Button.setOnClickListener(v -> {
-            if (bleManager != null) bleManager.sendCommand("SETVOL 15");
-        });
-
-        playPauseButton.setOnClickListener(v -> {
-            if (bleManager != null) bleManager.sendCommand("PLAY 2");
-        });
-
+    private void sendBleCommand(String cmd) {
         if (bleManager != null) {
-            bleManager.sendCommand("LIST");
+            Log.d("RadioFragment", "Próba wysłania: " + cmd);
+            bleManager.sendCommand(cmd);
+        } else {
+            Toast.makeText(getContext(), "Błąd: Brak połączenia!", Toast.LENGTH_SHORT).show();
         }
     }
     public void updateStationName(String name) {

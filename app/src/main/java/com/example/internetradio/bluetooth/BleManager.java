@@ -27,8 +27,9 @@ public class BleManager {
     private static final String TAG = "BleManager";
     private static final String TARGET_DEVICE_NAME = "ESP32-Radio";
 
-    private static final UUID SERVICE_UUID = UUID.fromString("4fafc201-1fb5-459e-8fcc-c5c9c331914b");
-    private static final UUID CHARACTERISTIC_UUID = UUID.fromString("beb5483e-36e1-4688-b7f5-ea07361b26a8");
+    private static final UUID SERVICE_UUID = UUID.fromString("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
+    private static final UUID CHARACTERISTIC_RX_UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
+    private static final UUID CHARACTERISTIC_TX_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
     private static final UUID CLIENT_CHARACTERISTIC_CONFIG = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
     public interface BleListener {
@@ -42,6 +43,8 @@ public class BleManager {
     private BluetoothGattCharacteristic commandCharacteristic;
     private final Context context;
     private final BleListener listener;
+    private BluetoothGattCharacteristic rxCharacteristic;
+    private BluetoothGattCharacteristic txCharacteristic;
 
     public BleManager(Context context, BleListener listener) {
         this.context = context;
@@ -122,26 +125,25 @@ public class BleManager {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 BluetoothGattService service = gatt.getService(SERVICE_UUID);
                 if (service != null) {
-                    commandCharacteristic = service.getCharacteristic(CHARACTERISTIC_UUID);
-                    if (commandCharacteristic != null) {
-                        gatt.setCharacteristicNotification(commandCharacteristic, true);
+                    rxCharacteristic = service.getCharacteristic(CHARACTERISTIC_RX_UUID);
+                    txCharacteristic = service.getCharacteristic(CHARACTERISTIC_TX_UUID);
 
-                        BluetoothGattDescriptor descriptor = commandCharacteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG);
+                    if (txCharacteristic != null) {
+                        gatt.setCharacteristicNotification(txCharacteristic, true);
+                        BluetoothGattDescriptor descriptor = txCharacteristic.getDescriptor(CLIENT_CHARACTERISTIC_CONFIG);
                         if (descriptor != null) {
                             descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                             gatt.writeDescriptor(descriptor);
                         }
                     }
                     listener.onStatusUpdate("Połączenie gotowe!");
-                } else {
-                    listener.onStatusUpdate("Błąd: Nie znaleziono usługi!");
                 }
             }
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-            if (CHARACTERISTIC_UUID.equals(characteristic.getUuid())) {
+            if (CHARACTERISTIC_TX_UUID.equals(characteristic.getUuid())) {
                 byte[] data = characteristic.getValue();
                 if (data != null && data.length > 0) {
                     String receivedText = new String(data);
@@ -163,9 +165,9 @@ public class BleManager {
     };
 
     public void sendCommand(String cmd) {
-        if (bluetoothGatt != null && commandCharacteristic != null) {
-            commandCharacteristic.setValue(cmd.getBytes());
-            bluetoothGatt.writeCharacteristic(commandCharacteristic);
+        if (bluetoothGatt != null && rxCharacteristic != null) {
+            rxCharacteristic.setValue(cmd.getBytes());
+            bluetoothGatt.writeCharacteristic(rxCharacteristic);
             Log.d(TAG, "Wysłano: " + cmd);
         } else {
             listener.onStatusUpdate("Błąd: Brak połączenia!");
