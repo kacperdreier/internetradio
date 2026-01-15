@@ -49,13 +49,6 @@ public class StationListFragment extends Fragment implements StationListAdapter.
     @Override
     public void onStationClick(RadioStation station) {
         com.example.internetradio.MainActivity mainActivity = (com.example.internetradio.MainActivity) getActivity();
-        if (mainActivity != null && mainActivity.getBleManager() != null) {
-
-            String command = "ADD " + station.getUrl() + " " + station.getName();
-            mainActivity.getBleManager().sendCommand(command);
-            mainActivity.getBleManager().sendCommand("PLAY 2");
-        }
-
 
         Bundle bundle = new Bundle();
         bundle.putString("stationUuid", station.getStationUuid());

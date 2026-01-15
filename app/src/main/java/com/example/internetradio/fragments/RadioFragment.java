@@ -20,16 +20,18 @@ import com.example.internetradio.bluetooth.BleManager;
 
 public class RadioFragment extends Fragment {
 
-    private ImageButton playPauseButton, prevButton, nextButton;
+    private ImageButton prevButton, nextButton;
     private Button volUpButton, volDownButton, vol15Button, connectButton;
     private BleManager bleManager;
     private TextView stationNameTextView;
+    private TextView currentStationTextView;
 
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_radio, container, false);
+        View root = inflater.inflate(R.layout.fragment_radio, container, false);
+        return root;
     }
 
     @Override
@@ -37,7 +39,6 @@ public class RadioFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         stationNameTextView = view.findViewById(R.id.station_name_text);
-        playPauseButton = view.findViewById(R.id.button_play_pause);
         prevButton = view.findViewById(R.id.button_prev_station);
         nextButton = view.findViewById(R.id.button_next_station);
         volUpButton = view.findViewById(R.id.button_vol_plus);
@@ -56,7 +57,6 @@ public class RadioFragment extends Fragment {
         volUpButton.setOnClickListener(v -> sendBleCommand("VOL+"));
         volDownButton.setOnClickListener(v -> sendBleCommand("VOL-"));
         vol15Button.setOnClickListener(v -> sendBleCommand("SETVOL 15"));
-        playPauseButton.setOnClickListener(v -> sendBleCommand("PLAY 2"));
     }
 
     @Override
@@ -85,8 +85,19 @@ public class RadioFragment extends Fragment {
         }
     }
     public void updateStationName(String name) {
-        if (stationNameTextView != null) {
-            stationNameTextView.setText(name);
-        }
+        if (getActivity() == null) return;
+
+        getActivity().runOnUiThread(() -> {
+            if (stationNameTextView != null) {
+                stationNameTextView.setText(name);
+            }
+
+            if (currentStationTextView != null) {
+                if (name.contains("PLAYING") || name.length() < 30) {
+                    String cleanName = name.replace("PLAYING:", "").replace("_", " ").trim();
+                    currentStationTextView.setText(cleanName);
+                }
+            }
+        });
     }
 }

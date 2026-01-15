@@ -45,6 +45,7 @@ public class BleManager {
     private final BleListener listener;
     private BluetoothGattCharacteristic rxCharacteristic;
     private BluetoothGattCharacteristic txCharacteristic;
+    private boolean connected = false;
 
     public BleManager(Context context, BleListener listener) {
         this.context = context;
@@ -108,10 +109,12 @@ public class BleManager {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 listener.onStatusUpdate("Połączono! Konfiguruję...");
                 gatt.requestMtu(512);
+                connected = true;
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 listener.onStatusUpdate("Rozłączono z ESP32");
                 commandCharacteristic = null;
                 bluetoothGatt = null;
+                connected = false;
             }
         }
 
@@ -172,5 +175,8 @@ public class BleManager {
         } else {
             listener.onStatusUpdate("Błąd: Brak połączenia!");
         }
+    }
+    public boolean isConnected() {
+        return connected;
     }
 }

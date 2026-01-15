@@ -7,41 +7,20 @@
     android:padding="16dp"
     tools:context="com.example.internetradio.fragments.RadioFragment">
 
-    <ImageView
-        android:id="@+id/station_logo"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:layout_marginTop="32dp"
-        android:src="@drawable/ic_radio_default"
-        android:contentDescription="Logo stacji"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <TextView
         android:id="@+id/station_name_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="Radio Domyslne"
+        android:layout_marginTop="32dp"
+        android:text="Lista stacji:"
         android:textAlignment="center"
-        android:textSize="24sp"
-        android:textStyle="bold"
+        android:textSize="14sp"
+        android:textColor="#757575"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/station_logo" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/track_info_text"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Czekam na sygnał..."
-        android:textAlignment="center"
-        android:textSize="18sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/station_name_text" />
+
 
     <LinearLayout
         android:id="@+id/control_layout"
@@ -50,7 +29,7 @@
         android:layout_marginTop="32dp"
         android:gravity="center"
         android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@+id/track_info_text">
+        app:layout_constraintTop_toBottomOf="@+id/station_name_text">
 
         <ImageButton
             android:id="@+id/button_prev_station"
@@ -60,18 +39,10 @@
             android:src="@drawable/ic_skip_previous" />
 
         <ImageButton
-            android:id="@+id/button_play_pause"
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_play" />
-
-        <ImageButton
             android:id="@+id/button_next_station"
             android:layout_width="64dp"
             android:layout_height="64dp"
+            android:layout_marginStart="32dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_skip_next" />
     </LinearLayout>

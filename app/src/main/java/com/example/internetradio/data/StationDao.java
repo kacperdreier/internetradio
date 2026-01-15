@@ -34,10 +34,15 @@ public interface StationDao {
     @Query("SELECT * FROM stations WHERE stationUuid = :uuid")
     LiveData<RadioStation> getStationByUuid(String uuid);
 
-    @Query("SELECT * FROM stations WHERE is_favorite = 1 ORDER BY name ASC")
+    @Query("SELECT * FROM stations WHERE is_favorite = 1 LIMIT 10")
     LiveData<List<RadioStation>> getFavoriteStations();
 
     @Query("SELECT COUNT(stationUuid) FROM stations")
     int getStationCount();
 
+    @Query("UPDATE stations SET espIndex = -1")
+    void resetAllEspIndices();
+
+    @Query("SELECT * FROM stations WHERE is_favorite = 1")
+    List<RadioStation> getFavoriteStationsSync();
 }

@@ -28,6 +28,11 @@ public class RadioStation {
     @ColumnInfo(name = "is_favorite")
     private boolean isFavorite = false;
 
+    private int espIndex = -1;
+
+    @SerializedName("bitrate")
+    private int bitrate;
+
     public RadioStation(String stationUuid, String name, String url, String country, boolean isFavorite) {
         this.stationUuid = stationUuid;
         this.name = name;
@@ -58,4 +63,15 @@ public class RadioStation {
     public void setFavorite(boolean favorite) {
         isFavorite = favorite;
     }
+
+    public int getEspIndex() {
+        return espIndex;
+    }
+
+    public void setEspIndex(int espIndex) {
+        this.espIndex = espIndex;
+    }
+
+    public int getBitrate() { return bitrate; }
+    public void setBitrate(int bitrate) { this.bitrate = bitrate; }
 }

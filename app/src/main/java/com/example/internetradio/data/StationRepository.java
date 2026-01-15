@@ -33,24 +33,34 @@ public class StationRepository {
     }
 
     public void fetchStationsAndSave() {
-        apiService.getStationsByCountry().enqueue(new Callback<List<RadioStation>>() {
+        apiService.getSafeStations("Poland", 128, true, "bitrate").enqueue(new Callback<List<RadioStation>>() {
             @Override
             public void onResponse(Call<List<RadioStation>> call, Response<List<RadioStation>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    List<RadioStation> stations = response.body();
+                    List<RadioStation> allFetched = response.body();
+
+                    java.util.List<RadioStation> safeStations = new java.util.ArrayList<>();
+
+                    for (RadioStation s : allFetched) {
+                        if (s.getBitrate() > 0 && s.getBitrate() <= 128) {
+                            String cleanName = s.getName().replaceAll("[^a-zA-Z0-9]", "_");
+                            s.setName(cleanName);
+                            safeStations.add(s);
+                        }
+                    }
 
                     databaseWriteExecutor.execute(() -> {
-                        stationDao.insertAll(stations);
+                        stationDao.deleteAll();
+                        stationDao.insertAll(safeStations);
+                        Log.d("Repository", "Zapisano " + safeStations.size() + " bezpiecznych stacji (max 128kbps)");
                     });
 
-                } else {
-                    System.out.println("Błąd API: Nieudane pobieranie stacji.");
                 }
             }
 
             @Override
             public void onFailure(Call<List<RadioStation>> call, Throwable t) {
-                System.out.println("Błąd sieci: " + t.getMessage());
+                Log.e("Repository", "Błąd sieci: " + t.getMessage());
             }
         });
     }
@@ -93,5 +103,25 @@ public class StationRepository {
         databaseWriteExecutor.execute(() -> {
             stationDao.update(station);
         });
+    }
+    public void resetAllIndices() {
+        new Thread(() -> {
+            stationDao.resetAllEspIndices();
+        }).start();
+    }
+    public List<RadioStation> getFavoriteStationsSync() {
+        final List<RadioStation>[] result = new List[1];
+        Thread thread = new Thread(() -> {
+            result[0] = stationDao.getFavoriteStationsSync();
+        });
+
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return result[0] != null ? result[0] : new java.util.ArrayList<>();
     }
 }
