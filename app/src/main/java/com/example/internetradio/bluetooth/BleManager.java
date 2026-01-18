@@ -108,11 +108,12 @@ public class BleManager {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 listener.onStatusUpdate("Połączono! Konfiguruję...");
-                gatt.requestMtu(512);
+                gatt.requestMtu(517);
                 connected = true;
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 listener.onStatusUpdate("Rozłączono z ESP32");
-                commandCharacteristic = null;
+                rxCharacteristic = null;
+                txCharacteristic = null;
                 bluetoothGatt = null;
                 connected = false;
             }
@@ -120,6 +121,13 @@ public class BleManager {
 
         @Override
         public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d(TAG, "MTU ustawione na: " + mtu);
+                listener.onStatusUpdate("MTU OK (" + mtu + "), szukam usług...");
+            } else {
+                Log.e(TAG, "Błąd zmiany MTU: " + status);
+                listener.onStatusUpdate("Błąd MTU, szukam usług mimo to...");
+            }
             gatt.discoverServices();
         }
 
@@ -165,7 +173,7 @@ public class BleManager {
                 Log.d(TAG, "Deskryptor powiadomień zapisany pomyślnie");
             }
         }
-    };
+        };
 
     public void sendCommand(String cmd) {
         if (bluetoothGatt != null && rxCharacteristic != null) {

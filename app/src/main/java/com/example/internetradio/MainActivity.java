@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         viewModel.getFavoriteStations().observe(this, favorites -> {
-            if (bleManager != null && bleManager.isConnected() && favorites != null) {
+            if ((bleManager != null) && bleManager.isConnected() && (favorites != null)) {
                 int delay = 500;
 
                 for (RadioStation station : favorites) {
@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-        });;
+        });
     }
 
     private void connectWithDelay() {
