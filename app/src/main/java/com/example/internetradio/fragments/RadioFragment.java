@@ -21,7 +21,7 @@ import com.example.internetradio.bluetooth.BleManager;
 public class RadioFragment extends Fragment {
 
     private ImageButton prevButton, nextButton;
-    private Button volUpButton, volDownButton, vol15Button, connectButton;
+    private Button volUpButton, volDownButton, vol15Button, connectButton, saveButton, refreshButton;
     private BleManager bleManager;
     private TextView stationNameTextView;
     private TextView currentStationTextView;
@@ -39,12 +39,15 @@ public class RadioFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         stationNameTextView = view.findViewById(R.id.station_name_text);
+        currentStationTextView = view.findViewById(R.id.current_station_display);
         prevButton = view.findViewById(R.id.button_prev_station);
         nextButton = view.findViewById(R.id.button_next_station);
         volUpButton = view.findViewById(R.id.button_vol_plus);
         volDownButton = view.findViewById(R.id.button_vol_minus);
         vol15Button = view.findViewById(R.id.button_vol_15);
         connectButton = view.findViewById(R.id.button_ble_connect);
+        saveButton = view.findViewById(R.id.button_save_esp);
+        refreshButton = view.findViewById(R.id.button_refresh_status);
 
         setupBleManager();
 
@@ -57,6 +60,13 @@ public class RadioFragment extends Fragment {
         volUpButton.setOnClickListener(v -> sendBleCommand("VOL+"));
         volDownButton.setOnClickListener(v -> sendBleCommand("VOL-"));
         vol15Button.setOnClickListener(v -> sendBleCommand("SETVOL 15"));
+
+        saveButton.setOnClickListener(v -> {
+            sendBleCommand("SAVE");
+            Toast.makeText(getContext(), "Wysłano prośbę o zapis do pamięci ESP", Toast.LENGTH_SHORT).show();
+        });
+
+        refreshButton.setOnClickListener(v -> sendBleCommand("CURRENT"));
     }
 
     @Override
@@ -64,9 +74,11 @@ public class RadioFragment extends Fragment {
         super.onResume();
         setupBleManager();
 
-        View fragmentView = getView();
-        if (fragmentView != null) {
-            fragmentView.postDelayed(() -> sendBleCommand("LIST"), 1000);
+        if (bleManager != null && bleManager.isConnected()) {
+            View fragmentView = getView();
+            if (fragmentView != null) {
+                fragmentView.postDelayed(() -> sendBleCommand("CURRENT"), 1000);
+            }
         }
     }
 
@@ -84,19 +96,21 @@ public class RadioFragment extends Fragment {
             Toast.makeText(getContext(), "Błąd: Brak połączenia!", Toast.LENGTH_SHORT).show();
         }
     }
-    public void updateStationName(String name) {
-        if (getActivity() == null) return;
+    public void updateStationName(String data) {
+        if (getActivity() == null || currentStationTextView == null) return;
 
         getActivity().runOnUiThread(() -> {
-            if (stationNameTextView != null) {
-                stationNameTextView.setText(name);
+            if (data.contains(";")) {
+                String[] parts = data.split(";");
+                String name = parts[0].replace("_", " ").trim();
+                currentStationTextView.setText(name);
+            } else {
+                String cleanName = data.replace("PLAYING:", "").replace("_", " ").trim();
+                currentStationTextView.setText(cleanName);
             }
 
-            if (currentStationTextView != null) {
-                if (name.contains("PLAYING") || name.length() < 30) {
-                    String cleanName = name.replace("PLAYING:", "").replace("_", " ").trim();
-                    currentStationTextView.setText(cleanName);
-                }
+            if (stationNameTextView != null) {
+                stationNameTextView.setText("Odebrano dane z ESP32");
             }
         });
     }

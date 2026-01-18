@@ -23,6 +23,7 @@ import com.example.internetradio.viewmodel.StationViewModel;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
@@ -30,17 +31,22 @@ public class MainActivity extends AppCompatActivity {
     private AppBarConfiguration mAppBarConfiguration;
     private BleManager bleManager;
     private StationViewModel viewModel;
-    Set<String> beingProcessed = new HashSet<>();
+    private final Set<String> syncingUuids = new HashSet<>();
 
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
-                Boolean scanGranted = permissions.getOrDefault(Manifest.permission.BLUETOOTH_SCAN, false);
-                Boolean connectGranted = permissions.getOrDefault(Manifest.permission.BLUETOOTH_CONNECT, false);
-
-                if (scanGranted != null && scanGranted && connectGranted != null && connectGranted) {
-                    Toast.makeText(this, "Uprawnienia BT przyznane", Toast.LENGTH_SHORT).show();
+                boolean allGranted = true;
+                for (Boolean granted : permissions.values()) {
+                    if (!granted) {
+                        allGranted = false;
+                        break;
+                    }
+                }
+                if (allGranted) {
+                    Toast.makeText(this, "Uprawnienia Bluetooth przyznane", Toast.LENGTH_SHORT).show();
+                    connectWithDelay();
                 } else {
-                    Toast.makeText(this, "Aplikacja wymaga uprawnień Bluetooth!", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Aplikacja wymaga uprawnień do działania!", Toast.LENGTH_LONG).show();
                 }
             });
 
@@ -69,11 +75,14 @@ public class MainActivity extends AppCompatActivity {
         bleManager = new BleManager(this, new BleManager.BleListener() {
             @Override
             public void onStatusUpdate(String message) {
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());
-                if (message.contains("Połączenie gotowe") || message.contains("Connected")) {
-                    Log.d("BLE_SYNC", "Połączono! Resetuję indeksy, aby wymusić wysyłkę ulubionych.");
-                    viewModel.resetAllIndices();
-                }
+                runOnUiThread(() -> {
+                    Log.d("BleStatus", message);
+                    if (message.contains("Połączenie gotowe")) {
+                        new android.os.Handler(getMainLooper()).postDelayed(() -> {
+                            bleManager.sendCommand("CURRENT");
+                        }, 1500);
+                    }
+                });
             }
 
             @Override
@@ -84,74 +93,57 @@ public class MainActivity extends AppCompatActivity {
 
         checkPermissions();
 
-        if (hasRequiredPermissions()) {
-            connectWithDelay();
-        }
-
         viewModel.getFavoriteStations().observe(this, favorites -> {
-            if ((bleManager != null) && bleManager.isConnected() && (favorites != null)) {
-                int delay = 500;
-
-                for (RadioStation station : favorites) {
-                    if (station.getEspIndex() == -1 && !beingProcessed.contains(station.getStationUuid())) {
-
-                        beingProcessed.add(station.getStationUuid());
-                        int finalIdx = viewModel.getNextEspIndex();
-
-                        new android.os.Handler(getMainLooper()).postDelayed(() -> {
-                            station.setEspIndex(finalIdx);
-                            viewModel.update(station); // Zapis do bazy
-
-                            String cleanName = station.getName().replace(" ", "_");
-                            bleManager.sendCommand("ADD " + station.getUrl() + " " + cleanName);
-
-                            Log.d("BLE_SYNC", "Wysłano ADD dla: " + cleanName + " na slot: " + finalIdx);
-                        }, delay);
-
-                        delay += 1200;
-                    }
-                }
+            if (bleManager != null && bleManager.isConnected() && favorites != null) {
+                syncNewFavoritesOnly(favorites);
             }
         });
     }
 
-    private void connectWithDelay() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            if (bleManager != null) {
-                bleManager.connectToRadio();
+    private void syncNewFavoritesOnly(List<RadioStation> favorites) {
+        int delay = 500;
+        for (RadioStation station : favorites) {
+            if (station.getEspIndex() == -1 && !syncingUuids.contains(station.getStationUuid())) {
+
+                syncingUuids.add(station.getStationUuid());
+
+                new android.os.Handler(getMainLooper()).postDelayed(() -> {
+                    int nextIdx = viewModel.getNextEspIndex();
+
+                    if (nextIdx != -1) {
+                        station.setEspIndex(nextIdx);
+                        viewModel.update(station);
+
+                        String cleanName = station.getName().replace(" ", "_");
+                        bleManager.sendCommand("ADD " + station.getUrl() + " " + cleanName);
+                        Log.d("BLE_SYNC", "Dodano nową stację: " + cleanName + " na slot " + nextIdx);
+                    }
+                }, delay);
+
+                delay += 1500;
             }
-        }, 3000);
+        }
     }
 
-    private boolean hasRequiredPermissions() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            return androidx.core.content.ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == android.content.pm.PackageManager.PERMISSION_GRANTED &&
-                    androidx.core.content.ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == android.content.pm.PackageManager.PERMISSION_GRANTED;
-        }
-        return androidx.core.content.ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+    private void connectWithDelay() {
+        new android.os.Handler(getMainLooper()).postDelayed(() -> {
+            if (bleManager != null && !bleManager.isConnected()) {
+                bleManager.connectToRadio();
+            }
+        }, 2000);
     }
 
     private void checkPermissions() {
-        String[] permissions;
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            permissions = new String[]{
-                    android.Manifest.permission.BLUETOOTH_SCAN,
-                    android.Manifest.permission.BLUETOOTH_CONNECT,
-                    android.Manifest.permission.ACCESS_FINE_LOCATION
-            };
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            requestPermissionLauncher.launch(new String[]{
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+            });
         } else {
-            permissions = new String[]{
-                    android.Manifest.permission.ACCESS_FINE_LOCATION
-            };
-        }
-
-        for (String permission : permissions) {
-            if (androidx.core.content.ContextCompat.checkSelfPermission(this, permission)
-                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                androidx.core.app.ActivityCompat.requestPermissions(this, permissions, 1);
-                break;
-            }
+            requestPermissionLauncher.launch(new String[]{
+                    Manifest.permission.ACCESS_FINE_LOCATION
+            });
         }
     }
 
@@ -161,47 +153,27 @@ public class MainActivity extends AppCompatActivity {
         return NavigationUI.navigateUp(navController, mAppBarConfiguration)
                 || super.onSupportNavigateUp();
     }
+
     private void updateRadioFragmentUI(String radioData) {
         try {
             androidx.fragment.app.Fragment navHostFragment = getSupportFragmentManager()
                     .findFragmentById(R.id.nav_host_fragment_content_main);
 
             if (navHostFragment != null) {
-                androidx.fragment.app.Fragment currentFragment = navHostFragment
-                        .getChildFragmentManager().getFragments().get(0);
-
-                if (currentFragment instanceof com.example.internetradio.fragments.RadioFragment) {
-                    ((com.example.internetradio.fragments.RadioFragment) currentFragment).updateStationName(radioData);
+                List<androidx.fragment.app.Fragment> fragments = navHostFragment.getChildFragmentManager().getFragments();
+                if (!fragments.isEmpty()) {
+                    androidx.fragment.app.Fragment currentFragment = fragments.get(0);
+                    if (currentFragment instanceof com.example.internetradio.fragments.RadioFragment) {
+                        ((com.example.internetradio.fragments.RadioFragment) currentFragment).updateStationName(radioData);
+                    }
                 }
             }
         } catch (Exception e) {
-            android.util.Log.e("MainActivity", "Błąd aktualizacji UI: " + e.getMessage());
+            Log.e("MainActivity", "Błąd aktualizacji UI: " + e.getMessage());
         }
     }
+
     public BleManager getBleManager() {
         return bleManager;
-    }
-    private void syncFavoritesToEsp() {
-        viewModel.getFavoriteStations().observe(this, favorites -> {
-            if (favorites == null) return;
-
-            int index = 1;
-            for (RadioStation station : favorites) {
-                if (index >= 10) break;
-
-                String cleanName = station.getName().replace(" ", "_");
-                String cmd = "ADD " + station.getUrl() + " " + cleanName;
-
-                station.setEspIndex(index);
-                viewModel.update(station);
-
-                final int finalIndex = index;
-                new android.os.Handler(getMainLooper()).postDelayed(() -> {
-                    bleManager.sendCommand(cmd);
-                }, index * 800);
-
-                index++;
-            }
-        });
     }
 }
