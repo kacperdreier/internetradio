@@ -3,6 +3,7 @@ package com.example.internetradio;
 import android.Manifest;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -95,34 +96,60 @@ public class MainActivity extends AppCompatActivity {
 
         viewModel.getFavoriteStations().observe(this, favorites -> {
             if (bleManager != null && bleManager.isConnected() && favorites != null) {
-                syncNewFavoritesOnly(favorites);
+                boolean needsSync = false;
+                for (int i = 0; i < favorites.size(); i++) {
+                    if (favorites.get(i).getEspIndex() != i) {
+                        needsSync = true;
+                        break;
+                    }
+                }
+
+                if (needsSync) {
+                    Log.d("BLE_SYNC", "Wykryto niespójność indeksów. Start Full Sync...");
+                    performFullSync(favorites);
+                }
             }
         });
     }
 
-    private void syncNewFavoritesOnly(List<RadioStation> favorites) {
-        int delay = 500;
-        for (RadioStation station : favorites) {
-            if (station.getEspIndex() == -1 && !syncingUuids.contains(station.getStationUuid())) {
+    private void performFullSync(List<RadioStation> favorites) {
+        viewModel.resetAllIndices();
 
-                syncingUuids.add(station.getStationUuid());
+        for (int i = 0; i < 10; i++) {
+            final int delay = i * 250;
+            new android.os.Handler(getMainLooper()).postDelayed(() -> {
+                bleManager.sendCommand("DELETE 0");
+            }, delay);
+        }
+
+        new android.os.Handler(getMainLooper()).postDelayed(() -> {
+            int currentDelay = 0;
+
+            for (int i = 0; i < favorites.size(); i++) {
+                if (i >= 10) break;
+
+                final int slotIdx = i;
+                final RadioStation station = favorites.get(i);
+                final String cleanName = station.getName().replace(" ", "_");
 
                 new android.os.Handler(getMainLooper()).postDelayed(() -> {
-                    int nextIdx = viewModel.getNextEspIndex();
+                    bleManager.sendCommand("ADD " + station.getUrl() + " " + cleanName);
 
-                    if (nextIdx != -1) {
-                        station.setEspIndex(nextIdx);
-                        viewModel.update(station);
+                    station.setEspIndex(slotIdx);
+                    viewModel.update(station);
 
-                        String cleanName = station.getName().replace(" ", "_");
-                        bleManager.sendCommand("ADD " + station.getUrl() + " " + cleanName);
-                        Log.d("BLE_SYNC", "Dodano nową stację: " + cleanName + " na slot " + nextIdx);
-                    }
-                }, delay);
+                    Log.d("BLE_SYNC", "Dodano: " + cleanName + " na slot: " + slotIdx);
+                }, currentDelay);
 
-                delay += 1500;
+                currentDelay += 1200;
             }
-        }
+
+            new android.os.Handler(getMainLooper()).postDelayed(() -> {
+                bleManager.sendCommand("SAVE");
+                Toast.makeText(this, "Lista w radiu zaktualizowana!", Toast.LENGTH_SHORT).show();
+            }, currentDelay + 1000);
+
+        }, 3000);
     }
 
     private void connectWithDelay() {
