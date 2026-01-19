@@ -1,6 +1,7 @@
 package com.example.internetradio.fragments;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -60,24 +61,30 @@ public class StationDetailsFragment extends Fragment {
         favoriteToggle.setOnClickListener(v -> {
             if (currentStation != null) {
                 boolean isChecked = favoriteToggle.isChecked();
-                currentStation.setFavorite(isChecked);
 
-                if (isChecked) {
-                    if (currentStation.getEspIndex() == -1) {
-                        int nextIdx = viewModel.getNextEspIndex();
-                        currentStation.setEspIndex(nextIdx);
-
-                        if (mainActivity != null && mainActivity.getBleManager() != null) {
-                            String cleanName = currentStation.getName().replace(" ", "_");
-                            String command = "ADD " + currentStation.getUrl() + " " + cleanName;
-                            mainActivity.getBleManager().sendCommand(command);
-                            Toast.makeText(getContext(), "Dodano do radia: slot " + nextIdx, Toast.LENGTH_SHORT).show();
+                if (mainActivity != null && mainActivity.getBleManager() != null) {
+                    if (isChecked) {
+                        String cleanName = currentStation.getName().replace(" ", "_");
+                        String cmd = "ADD " + currentStation.getUrl() + " " + cleanName;
+                        mainActivity.getBleManager().sendCommand(cmd);
+                        Toast.makeText(getContext(), "Wysłano żądanie dodania...", Toast.LENGTH_SHORT).show();
+                    } else {
+                        int idx = currentStation.getEspIndex();
+                        if (idx != -1) {
+                            mainActivity.getBleManager().sendCommand("DELETE " + idx);
+                            Toast.makeText(getContext(), "Wysłano żądanie usunięcia...", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(getContext(), "Błąd: Stacja nie ma indeksu w radiu", Toast.LENGTH_SHORT).show();
                         }
                     }
+
+                    new Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                        mainActivity.getBleManager().sendCommand("LIST");
+                    }, 1500);
                 } else {
-                    currentStation.setEspIndex(-1);
+                    favoriteToggle.setChecked(!isChecked);
+                    Toast.makeText(getContext(), "Brak połączenia z radiem!", Toast.LENGTH_SHORT).show();
                 }
-                viewModel.update(currentStation);
             }
         });
 

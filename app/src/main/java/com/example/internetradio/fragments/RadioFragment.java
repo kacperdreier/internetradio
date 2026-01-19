@@ -1,6 +1,8 @@
 package com.example.internetradio.fragments;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -55,8 +57,8 @@ public class RadioFragment extends Fragment {
             if (bleManager != null) bleManager.connectToRadio();
         });
 
-        nextButton.setOnClickListener(v -> sendBleCommand("NEXT"));
-        prevButton.setOnClickListener(v -> sendBleCommand("PREV"));
+        nextButton.setOnClickListener(v -> sendControlCommand("NEXT"));
+        prevButton.setOnClickListener(v -> sendControlCommand("PREV"));
         volUpButton.setOnClickListener(v -> sendBleCommand("VOL+"));
         volDownButton.setOnClickListener(v -> sendBleCommand("VOL-"));
         vol15Button.setOnClickListener(v -> sendBleCommand("SETVOL 15"));
@@ -66,7 +68,10 @@ public class RadioFragment extends Fragment {
             Toast.makeText(getContext(), "Wysłano prośbę o zapis do pamięci ESP", Toast.LENGTH_SHORT).show();
         });
 
-        refreshButton.setOnClickListener(v -> sendBleCommand("CURRENT"));
+        refreshButton.setOnClickListener(v -> {
+            sendBleCommand("CURRENT");
+            new Handler(Looper.getMainLooper()).postDelayed(() -> sendBleCommand("LIST"), 500);
+        });
     }
 
     @Override
@@ -75,10 +80,13 @@ public class RadioFragment extends Fragment {
         setupBleManager();
 
         if (bleManager != null && bleManager.isConnected()) {
-            View fragmentView = getView();
-            if (fragmentView != null) {
-                fragmentView.postDelayed(() -> sendBleCommand("CURRENT"), 1000);
-            }
+            bleManager.sendCommand("CURRENT");
+
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (bleManager != null && bleManager.isConnected()) {
+                    bleManager.sendCommand("LIST");
+                }
+            }, 500);
         }
     }
 
@@ -96,21 +104,40 @@ public class RadioFragment extends Fragment {
             Toast.makeText(getContext(), "Błąd: Brak połączenia!", Toast.LENGTH_SHORT).show();
         }
     }
+    private void sendControlCommand(String cmd) {
+        if (bleManager != null && bleManager.isConnected()) {
+            bleManager.sendCommand(cmd);
+
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if(bleManager.isConnected()) {
+                    bleManager.sendCommand("CURRENT");
+                }
+            }, 1000);
+        } else {
+            Toast.makeText(getContext(), "Błąd: Brak połączenia!", Toast.LENGTH_SHORT).show();
+        }
+    }
     public void updateStationName(String data) {
         if (getActivity() == null || currentStationTextView == null) return;
 
         getActivity().runOnUiThread(() -> {
-            if (data.contains(";")) {
-                String[] parts = data.split(";");
-                String name = parts[0].replace("_", " ").trim();
-                currentStationTextView.setText(name);
-            } else {
-                String cleanName = data.replace("PLAYING:", "").replace("_", " ").trim();
-                currentStationTextView.setText(cleanName);
+            if (data.contains("\n") && (data.contains("0:") || data.contains("1:"))) {
+                if (stationNameTextView != null) {
+                    stationNameTextView.setText(data);
+                    stationNameTextView.setTextAlignment(View.TEXT_ALIGNMENT_TEXT_START);
+                }
             }
-
-            if (stationNameTextView != null) {
-                stationNameTextView.setText("Odebrano dane z ESP32");
+            else if (data.contains(";")) {
+                String[] parts = data.split(";");
+                if (currentStationTextView != null) {
+                    currentStationTextView.setText(parts[0].replace("_", " ").trim());
+                }
+            }
+            else {
+                if (data.contains("PLAYING")) {
+                    if (currentStationTextView != null)
+                        currentStationTextView.setText(data.replace("PLAYING:", "").trim());
+                }
             }
         });
     }

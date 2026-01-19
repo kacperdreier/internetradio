@@ -3,7 +3,7 @@ package com.example.internetradio.viewmodel;
 import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData;
+import androidx.lifecycle.LiveData; // Ten import jest kluczowy!
 import com.example.internetradio.data.RadioStation;
 import com.example.internetradio.data.StationRepository;
 import java.util.List;
@@ -17,62 +17,41 @@ public class StationViewModel extends AndroidViewModel {
         super(application);
         repository = new StationRepository(application);
         allStations = repository.getAllStations();
-
-        repository.checkAndFetchStations();
     }
 
-    public LiveData<List<RadioStation>> getAllStations() {
-        return allStations;
-    }
+    public LiveData<List<RadioStation>> getAllStations() { return allStations; }
+    public LiveData<List<RadioStation>> getFavoriteStations() { return repository.getFavoriteStations(); }
+    public LiveData<RadioStation> getStationByUuid(String uuid) { return repository.getStationByUuid(uuid); }
 
-    public void refreshStations() {
-        repository.fetchStationsAndSave();
-    }
-    public LiveData<RadioStation> getStationByUuid(String uuid) {
-        return repository.getStationByUuid(uuid);
-    }
+    public void insert(RadioStation station) { repository.insert(station); }
+    public void delete(RadioStation station) { repository.delete(station); }
+    public void resetAllIndices() { repository.resetAllIndices(); }
 
-    public void delete(RadioStation station) {
-        repository.delete(station);
-    }
-
+    // Przekierowanie update() na metodę w repozytorium
     public void update(RadioStation station) {
-        repository.update(station);
-    }
-    public void insert(RadioStation station) {
-        repository.insert(station);
-    }
-    public LiveData<List<RadioStation>> getFavoriteStations() {
-        return repository.getFavoriteStations();
+        repository.updateFavoriteStatus(station);
     }
 
     public void updateFavoriteStatus(RadioStation station) {
         repository.updateFavoriteStatus(station);
     }
 
+    // --- METODY SYNCHRONICZNE DLA MAIN ACTIVITY ---
+
+    public List<RadioStation> getAllStationsSync() {
+        return repository.getAllStationsSync();
+    }
+
+    public List<RadioStation> getFavoriteStationsSync() {
+        return repository.getFavoriteStationsSync();
+    }
+
+    public void clearAllFavorites() {
+        repository.clearAllFavorites();
+    }
+
     public int getNextEspIndex() {
-        List<RadioStation> favorites = repository.getFavoriteStationsSync();
-
-        if (favorites == null || favorites.isEmpty()) {
-            return 1;
-        }
-
-        int maxIdx = 0;
-        for (RadioStation s : favorites) {
-            if (s.getEspIndex() > maxIdx) {
-                maxIdx = s.getEspIndex();
-            }
-        }
-
-        if (maxIdx >= 10) {
-            return -1;
-        }
-
-        return maxIdx + 1;
+        // Metoda zostawiona dla kompatybilności, choć teraz rządzi ESP
+        return 1;
     }
-
-    public void resetAllIndices() {
-        repository.resetAllIndices();
-    }
-
 }

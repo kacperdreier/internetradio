@@ -7,7 +7,6 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
-
 import java.util.List;
 
 @Dao
@@ -16,14 +15,8 @@ public interface StationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(RadioStation station);
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertAll(List<RadioStation> stations);
-
     @Query("SELECT * FROM stations ORDER BY name ASC")
     LiveData<List<RadioStation>> getAllStations();
-
-    @Query("DELETE FROM stations")
-    void deleteAll();
 
     @Delete
     void delete(RadioStation station);
@@ -37,12 +30,15 @@ public interface StationDao {
     @Query("SELECT * FROM stations WHERE is_favorite = 1 LIMIT 10")
     LiveData<List<RadioStation>> getFavoriteStations();
 
-    @Query("SELECT COUNT(stationUuid) FROM stations")
-    int getStationCount();
-
     @Query("UPDATE stations SET espIndex = -1")
     void resetAllEspIndices();
 
+    @Query("SELECT * FROM stations")
+    List<RadioStation> getAllStationsSync();
+
     @Query("SELECT * FROM stations WHERE is_favorite = 1")
     List<RadioStation> getFavoriteStationsSync();
+
+    @Query("UPDATE stations SET is_favorite = 0, espIndex = -1")
+    void clearAllFavorites();
 }

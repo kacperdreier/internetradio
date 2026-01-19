@@ -33,22 +33,15 @@ public class MainActivity extends AppCompatActivity {
     private BleManager bleManager;
     private StationViewModel viewModel;
     private final Set<String> syncingUuids = new HashSet<>();
+    private boolean isUpdatingFromRadio = false;
 
     private final ActivityResultLauncher<String[]> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), permissions -> {
                 boolean allGranted = true;
                 for (Boolean granted : permissions.values()) {
-                    if (!granted) {
-                        allGranted = false;
-                        break;
-                    }
+                    if (!granted) allGranted = false;
                 }
-                if (allGranted) {
-                    Toast.makeText(this, "Uprawnienia Bluetooth przyznane", Toast.LENGTH_SHORT).show();
-                    connectWithDelay();
-                } else {
-                    Toast.makeText(this, "Aplikacja wymaga uprawnień do działania!", Toast.LENGTH_LONG).show();
-                }
+                if (allGranted) connectWithDelay();
             });
 
     @Override
@@ -79,77 +72,73 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     Log.d("BleStatus", message);
                     if (message.contains("Połączenie gotowe")) {
-                        new android.os.Handler(getMainLooper()).postDelayed(() -> {
-                            bleManager.sendCommand("CURRENT");
-                        }, 1500);
+                        bleManager.sendCommand("ERASE");
+                        new Handler(getMainLooper()).postDelayed(() -> bleManager.sendCommand("CURRENT"), 1000);
+                        new Handler(getMainLooper()).postDelayed(() -> bleManager.sendCommand("LIST"), 2000);
                     }
                 });
             }
 
             @Override
             public void onDataReceived(String data) {
-                runOnUiThread(() -> updateRadioFragmentUI(data));
+                runOnUiThread(() -> {
+                    updateRadioFragmentUI(data);
+                    processIncomingData(data);
+                });
             }
         });
 
         checkPermissions();
 
-        viewModel.getFavoriteStations().observe(this, favorites -> {
-            if (bleManager != null && bleManager.isConnected() && favorites != null) {
-                boolean needsSync = false;
-                for (int i = 0; i < favorites.size(); i++) {
-                    if (favorites.get(i).getEspIndex() != i) {
-                        needsSync = true;
-                        break;
-                    }
-                }
-
-                if (needsSync) {
-                    Log.d("BLE_SYNC", "Wykryto niespójność indeksów. Start Full Sync...");
-                    performFullSync(favorites);
-                }
-            }
-        });
     }
 
-    private void performFullSync(List<RadioStation> favorites) {
-        viewModel.resetAllIndices();
-
-        for (int i = 0; i < 10; i++) {
-            final int delay = i * 250;
-            new android.os.Handler(getMainLooper()).postDelayed(() -> {
-                bleManager.sendCommand("DELETE 0");
-            }, delay);
+    private void processIncomingData(String data) {
+        if (data.contains(":") && data.contains("\n")) {
+            Log.d("BLE_SYNC", "Otrzymano listę z radia. Aktualizuję bazę telefonu...");
+            syncLocalDbWithRadio(data);
         }
+    }
 
-        new android.os.Handler(getMainLooper()).postDelayed(() -> {
-            int currentDelay = 0;
+    private void syncLocalDbWithRadio(String radioList) {
+        isUpdatingFromRadio = true;
 
-            for (int i = 0; i < favorites.size(); i++) {
-                if (i >= 10) break;
+        new Thread(() -> {
+            viewModel.clearAllFavorites();
 
-                final int slotIdx = i;
-                final RadioStation station = favorites.get(i);
-                final String cleanName = station.getName().replace(" ", "_");
 
-                new android.os.Handler(getMainLooper()).postDelayed(() -> {
-                    bleManager.sendCommand("ADD " + station.getUrl() + " " + cleanName);
+            String[] lines = radioList.split("\n");
 
-                    station.setEspIndex(slotIdx);
-                    viewModel.update(station);
+            List<RadioStation> allStations = viewModel.getAllStationsSync();
 
-                    Log.d("BLE_SYNC", "Dodano: " + cleanName + " na slot: " + slotIdx);
-                }, currentDelay);
+            if (allStations != null) {
+                for (String line : lines) {
+                    if (line.contains(":")) {
+                        try {
+                            String[] parts = line.split(":", 2);
+                            int index = Integer.parseInt(parts[0].trim());
+                            String name = parts[1].trim();
 
-                currentDelay += 1200;
+                            for (RadioStation s : allStations) {
+                                String sName = s.getName().replace("_", " ").trim();
+                                String rName = name.replace("_", " ").trim();
+
+                                if (sName.equalsIgnoreCase(rName)) {
+                                    s.setFavorite(true);
+                                    s.setEspIndex(index);
+                                    viewModel.update(s);
+                                    Log.d("BLE_SYNC", "Dopasowano: " + s.getName() + " -> Index " + index);
+                                    break;
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.e("BLE_SYNC", "Błąd linii: " + line);
+                        }
+                    }
+                }
             }
-
-            new android.os.Handler(getMainLooper()).postDelayed(() -> {
-                bleManager.sendCommand("SAVE");
-                Toast.makeText(this, "Lista w radiu zaktualizowana!", Toast.LENGTH_SHORT).show();
-            }, currentDelay + 1000);
-
-        }, 3000);
+            isUpdatingFromRadio = false;
+            runOnUiThread(() -> Toast.makeText(this, "Zsynchronizowano!", Toast.LENGTH_SHORT).show());
+        }).start();
     }
 
     private void connectWithDelay() {
@@ -196,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         } catch (Exception e) {
-            Log.e("MainActivity", "Błąd aktualizacji UI: " + e.getMessage());
+            Log.e("MainActivity", "Błąd UI: " + e.getMessage());
         }
     }
 
