@@ -1,7 +1,9 @@
 package com.example.internetradio.fragments;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,7 +11,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
@@ -18,6 +19,7 @@ import com.example.internetradio.MainActivity;
 import com.example.internetradio.R;
 import com.example.internetradio.data.RadioStation;
 import com.example.internetradio.viewmodel.StationViewModel;
+import com.google.android.material.button.MaterialButton;
 
 public class StationDetailsFragment extends Fragment {
 
@@ -25,6 +27,7 @@ public class StationDetailsFragment extends Fragment {
     private RadioStation currentStation;
     private MainActivity mainActivity;
     private String stationUuid;
+    private Button favoriteButton;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -34,7 +37,8 @@ public class StationDetailsFragment extends Fragment {
 
         TextView name = view.findViewById(R.id.text_detail_name);
         TextView country = view.findViewById(R.id.text_detail_country);
-        ToggleButton favoriteToggle = view.findViewById(R.id.toggle_favorite);
+        TextView urlText = view.findViewById(R.id.text_detail_url);
+        favoriteButton = view.findViewById(R.id.favorite_button);
         Button deleteButton = view.findViewById(R.id.button_delete);
         Button playButton = view.findViewById(R.id.button_play);
 
@@ -42,11 +46,11 @@ public class StationDetailsFragment extends Fragment {
             stationUuid = getArguments().getString("stationUuid");
             viewModel.getStationByUuid(stationUuid).observe(getViewLifecycleOwner(), station -> {
                 if (station != null) {
-                    currentStation = station; // To aktualizuje obiekt w całym fragmencie
+                    currentStation = station;
                     name.setText(station.getName());
                     country.setText(station.getCountry());
-                    favoriteToggle.setChecked(station.isFavorite());
-                    Log.d("RADIO_DEBUG", "Obserwator odświeżył stację. Obecny index: " + station.getEspIndex());
+                    urlText.setText(station.getUrl());
+                    updateFavoriteButtonState(station.isFavorite());
                 }
             });
         }
@@ -58,12 +62,13 @@ public class StationDetailsFragment extends Fragment {
             }
         });
 
-        favoriteToggle.setOnClickListener(v -> {
+        favoriteButton.setOnClickListener(v -> {
             if (currentStation != null) {
-                boolean isChecked = favoriteToggle.isChecked();
+                boolean currentlyFavorite = currentStation.isFavorite();
+                boolean newState = !currentlyFavorite;
 
                 if (mainActivity != null && mainActivity.getBleManager() != null) {
-                    if (isChecked) {
+                    if (newState) {
                         String cleanName = currentStation.getName().replace(" ", "_");
                         String cmd = "ADD " + currentStation.getUrl() + " " + cleanName;
                         mainActivity.getBleManager().sendCommand(cmd);
@@ -74,15 +79,18 @@ public class StationDetailsFragment extends Fragment {
                             mainActivity.getBleManager().sendCommand("DELETE " + idx);
                             Toast.makeText(getContext(), "Wysłano żądanie usunięcia...", Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(getContext(), "Błąd: Stacja nie ma indeksu w radiu", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Błąd: Stacja nie jest w radiu", Toast.LENGTH_SHORT).show();
+                            return;
                         }
                     }
 
-                    new Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    updateFavoriteButtonState(newState);
+
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
                         mainActivity.getBleManager().sendCommand("LIST");
                     }, 1500);
+
                 } else {
-                    favoriteToggle.setChecked(!isChecked);
                     Toast.makeText(getContext(), "Brak połączenia z radiem!", Toast.LENGTH_SHORT).show();
                 }
             }
@@ -91,23 +99,28 @@ public class StationDetailsFragment extends Fragment {
         playButton.setOnClickListener(v -> {
             if (currentStation != null) {
                 int index = currentStation.getEspIndex();
-
-                Log.d("RADIO_DEBUG", "Kliknięto PLAY. Index: " + index);
-
                 if (mainActivity != null && mainActivity.getBleManager() != null) {
                     if (index != -1) {
                         mainActivity.getBleManager().sendCommand("PLAY " + index);
-                        Toast.makeText(getContext(), "Wysyłam PLAY " + index, Toast.LENGTH_SHORT).show();
                     } else {
-                        Toast.makeText(getContext(), "Ta stacja nie jest w pamięci radia!", Toast.LENGTH_SHORT).show();
-                        Log.e("RADIO_DEBUG", "Błąd: Próba PLAY na indeksie -1");
+                        Toast.makeText(getContext(), "Dodaj stację do ulubionych, aby zagrać!", Toast.LENGTH_SHORT).show();
                     }
+                } else {
+                    Toast.makeText(getContext(), "Brak połączenia z radiem!", Toast.LENGTH_SHORT).show();
                 }
-            } else {
-                Log.e("RADIO_DEBUG", "Błąd: currentStation jest NULL");
             }
         });
 
         return view;
+    }
+
+    private void updateFavoriteButtonState(boolean isFavorite) {
+        if (isFavorite) {
+            favoriteButton.setText("USUŃ Z ULUBIONYCH");
+            favoriteButton.setTextColor(Color.parseColor("#F57C00"));
+        } else {
+            favoriteButton.setText("DODAJ DO ULUBIONYCH");
+            favoriteButton.setTextColor(Color.GRAY);
+        }
     }
 }

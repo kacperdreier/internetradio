@@ -3,7 +3,7 @@ package com.example.internetradio.viewmodel;
 import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.LiveData; // Ten import jest kluczowy!
+import androidx.lifecycle.LiveData;
 import com.example.internetradio.data.RadioStation;
 import com.example.internetradio.data.StationRepository;
 import java.util.List;
@@ -27,7 +27,6 @@ public class StationViewModel extends AndroidViewModel {
     public void delete(RadioStation station) { repository.delete(station); }
     public void resetAllIndices() { repository.resetAllIndices(); }
 
-    // Przekierowanie update() na metodę w repozytorium
     public void update(RadioStation station) {
         repository.updateFavoriteStatus(station);
     }
@@ -36,7 +35,6 @@ public class StationViewModel extends AndroidViewModel {
         repository.updateFavoriteStatus(station);
     }
 
-    // --- METODY SYNCHRONICZNE DLA MAIN ACTIVITY ---
 
     public List<RadioStation> getAllStationsSync() {
         return repository.getAllStationsSync();
@@ -51,7 +49,6 @@ public class StationViewModel extends AndroidViewModel {
     }
 
     public int getNextEspIndex() {
-        // Metoda zostawiona dla kompatybilności, choć teraz rządzi ESP
         return 1;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.internetradio.fragments;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,7 +24,7 @@ import com.example.internetradio.bluetooth.BleManager;
 public class RadioFragment extends Fragment {
 
     private ImageButton prevButton, nextButton;
-    private Button volUpButton, volDownButton, vol15Button, connectButton, saveButton, refreshButton;
+    private Button volUpButton, volDownButton, vol15Button, connectButton, saveButton, refreshButton, eraseButton;
     private BleManager bleManager;
     private TextView stationNameTextView;
     private TextView currentStationTextView;
@@ -50,6 +51,7 @@ public class RadioFragment extends Fragment {
         connectButton = view.findViewById(R.id.button_ble_connect);
         saveButton = view.findViewById(R.id.button_save_esp);
         refreshButton = view.findViewById(R.id.button_refresh_status);
+        eraseButton = view.findViewById(R.id.button_erase_esp);
 
         setupBleManager();
 
@@ -66,6 +68,21 @@ public class RadioFragment extends Fragment {
         saveButton.setOnClickListener(v -> {
             sendBleCommand("SAVE");
             Toast.makeText(getContext(), "Wysłano prośbę o zapis do pamięci ESP", Toast.LENGTH_SHORT).show();
+        });
+
+        eraseButton.setOnClickListener(v -> {
+            new AlertDialog.Builder(getContext())
+                    .setTitle("Wyczyścić pamięć radia?")
+                    .setMessage("To usunie wszystkie zapisane stacje z pamięci trwałej ESP32. Lista w RAM pozostanie do restartu.")
+                    .setPositiveButton("Tak, usuń", (dialog, which) -> {
+                        sendBleCommand("ERASE");
+                        Toast.makeText(getContext(), "Wyczyszczono pamięć Flash radia!", Toast.LENGTH_LONG).show();
+                        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                            sendBleCommand("LIST");
+                        }, 1000);
+                    })
+                    .setNegativeButton("Anuluj", null)
+                    .show();
         });
 
         refreshButton.setOnClickListener(v -> {

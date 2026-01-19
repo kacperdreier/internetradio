@@ -1,14 +1,13 @@
 package com.example.internetradio.data;
 
 import android.app.Application;
-import androidx.lifecycle.LiveData; // Ten import naprawia błędy z LiveData
+import androidx.lifecycle.LiveData;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class StationRepository {
     private StationDao stationDao;
-    // Tworzymy własny executor, żeby nie polegać na StationDatabase
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public StationRepository(Application application) {
@@ -32,12 +31,10 @@ public class StationRepository {
         executor.execute(() -> stationDao.resetAllEspIndices());
     }
 
-    // Twoja metoda aktualizacji
     public void updateFavoriteStatus(RadioStation station) {
         executor.execute(() -> stationDao.update(station));
     }
 
-    // --- NOWE METODY DO OBSŁUGI BRAKUJĄCYCH FUNKCJI ---
 
     public List<RadioStation> getAllStationsSync() {
         return stationDao.getAllStationsSync();
